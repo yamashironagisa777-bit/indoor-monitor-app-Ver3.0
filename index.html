@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#123b5d">
+  <meta name="description" content="室内監視システムの状態とセンサー履歴を確認するアプリ">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    [hidden] { display: none !important; }
+    .login-screen { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: #f2f6fa; box-sizing: border-box; }
+    .login-card { width: min(100%, 390px); box-sizing: border-box; background: #fff; border-radius: 20px; padding: 28px; box-shadow: 0 12px 36px rgba(18,59,93,.12); }
+    .login-mark { width: 54px; height: 54px; border-radius: 16px; background: #123b5d; color: white; display: grid; place-items: center; font-size: 30px; margin: 0 auto 14px; }
+    .login-card h1 { text-align: center; font-size: 1.45rem; margin: 0 0 6px; color: #123b5d; }
+    .login-subtitle { text-align: center; color: #64748b; margin: 0 0 24px; }
+    .login-card label { display: block; font-weight: 600; margin: 14px 0 6px; }
+    .login-card input { box-sizing: border-box; width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 10px; font: inherit; }
+    .login-card button { width: 100%; margin-top: 20px; padding: 13px; border: 0; border-radius: 10px; background: #123b5d; color: white; font: inherit; font-weight: 700; }
+    .login-error { min-height: 1.4em; color: #b42318; font-size: .9rem; }
+    .login-warning { font-size: .78rem; color: #64748b; line-height: 1.5; margin-top: 18px; }
+    .logout-btn { margin-left: auto; border: 1px solid #d5dee7; border-radius: 9px; padding: 8px 12px; background: white; color: #123b5d; }
+  </style>
+  <title>室内監視システム</title>
+</head>
+<body>
+  <section id="loginScreen" class="login-screen">
+    <div class="login-card">
+      <div class="login-mark">⌂</div>
+      <h1>室内監視システム</h1>
+      <p class="login-subtitle">ご家族専用ログイン</p>
+      <form id="loginForm">
+        <label for="loginUsername">ユーザー名</label>
+        <input id="loginUsername" name="username" autocomplete="username" required>
+        <label for="loginPassword">パスワード</label>
+        <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
+        <button type="submit">ログイン</button>
+        <p id="loginError" class="login-error" role="alert" aria-live="polite"></p>
+      </form>
+      <p class="login-warning">簡易ログインです。認証情報はブラウザ側のコードから確認できるため、機密情報の保護には使えません。</p>
+    </div>
+  </section>
+  <div id="appContent" hidden>
+  <header class="topbar">
+    <div class="brand-mark">⌂</div>
+    <div><div class="eyebrow">HOME MONITOR</div><h1>室内監視システム</h1></div>
+    <button id="refreshBtn" class="icon-btn" aria-label="更新" title="更新">↻</button>
+    <button id="logoutButton" class="logout-btn" type="button">ログアウト</button>
+  </header>
+  <main>
+    <section class="status-row">
+      <div><span id="connectionDot" class="dot"></span><span id="connectionText">接続確認中</span></div>
+      <span id="updatedAt" class="muted">最終更新：--</span>
+    </section>
+    <section class="alert-card" id="alertCard" aria-live="polite">
+      <div class="alert-icon" id="alertIcon">✓</div><div><strong id="alertTitle">状態を確認しています</strong><p id="alertDetail">クラウドから最新データを取得しています。</p></div>
+    </section>
+    <h2>現在の状態</h2>
+    <section class="metric-grid">
+      <article class="metric-card"><div class="metric-label">室温</div><div class="metric-value"><span id="temperature">--</span><small>℃</small></div><div class="metric-foot">温度センサー</div></article>
+      <article class="metric-card"><div class="metric-label">湿度</div><div class="metric-value"><span id="humidity">--</span><small>%</small></div><div class="metric-foot">相対湿度</div></article>
+      <article class="metric-card"><div class="metric-label">ガスセンサー値</div><div class="metric-value"><span id="gas">--</span></div><div class="metric-foot">校正前の値は参考値</div></article>
+      <article class="metric-card"><div class="metric-label">ドア</div><div class="state-value" id="door">--</div><div class="metric-foot">開閉センサー</div></article>
+      <article class="metric-card wide"><div class="metric-label">ベッド・枕の在床</div><div class="state-value" id="bed">--</div><div class="metric-foot">圧力センサー</div></article>
+    </section>
+    <section class="section-head audio-section-head"><div><h2>最新の録音</h2><p class="muted">Raspberry Piで録音した音声</p></div><button id="audioRefresh" class="secondary-btn" type="button">録音更新</button></section>
+    <section class="audio-card" aria-live="polite">
+      <div class="audio-file-icon" aria-hidden="true">♫</div>
+      <div class="audio-file-info">
+        <strong id="audioFileName">録音データを確認しています…</strong>
+        <p id="audioStatus" class="muted">Supabaseから最新の録音を取得しています。</p>
+      </div>
+      <audio id="latestAudio" controls preload="none" hidden></audio>
+    </section>
+    <section class="section-head"><div><h2>センサー履歴</h2><p class="muted">保存された測定データの推移</p></div><button id="historyRefresh" class="secondary-btn">履歴更新</button></section>
+    <section class="history-card">
+      <div class="tabs" role="group" aria-label="グラフ項目">
+        <button class="tab active" data-field="1">室温</button><button class="tab" data-field="2">湿度</button><button class="tab" data-field="3">ガス値</button>
+      </div>
+      <div class="chart-summary"><strong id="chartTitle">室温の推移</strong><span id="chartRange">直近の記録</span></div>
+      <div class="chart-wrap"><canvas id="historyChart" aria-label="センサー履歴グラフ" role="img"></canvas><div id="chartEmpty" class="chart-empty">履歴データを読み込んでいます…</div></div>
+      <div class="chart-legend"><span class="legend-dot"></span><span id="legendText">室温（℃）</span></div>
+    </section>
+    <section class="note-card"><strong>表示について</strong><p>この画面はクラウドに届いた測定値を表示します。通信が切れている場合、表示値が古い可能性があります。ガス値はセンサーの種類・校正により意味が異なるため、校正前に安全判定へ使用しないでください。</p></section>
+    <footer>室内監視システム · Android向けWebアプリ</footer>
+  </main>
+  <nav class="bottom-nav"><a class="nav-item selected" href="#top" aria-current="page"><span>▦</span>現在の状態</a><a class="nav-item" href="#historyChart"><span>⌁</span>履歴グラフ</a></nav>
+  </div>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
