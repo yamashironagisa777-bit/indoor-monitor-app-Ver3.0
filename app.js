@@ -435,10 +435,8 @@
     async function refreshLatestAudio() {
       if (audioLoading) return;
 
-      const status = $('audioStatus');
-      const fileName = $('audioFileName');
       const player = $('latestAudio');
-      if (!status || !fileName || !player) return;
+      if (!player) return;
 
       if (
         !cfg.supabaseUrl ||
@@ -446,14 +444,11 @@
         String(cfg.supabaseUrl).includes('YOUR_') ||
         String(cfg.supabaseAnonKey).includes('YOUR_')
       ) {
-        fileName.textContent = 'Supabaseの設定が必要です';
-        status.textContent = 'config.js にSupabase URLと公開可能キーを設定してください。';
-        player.hidden = true;
+        console.warn('呼び出し録音の再生には config.js のSupabase設定が必要です。');
         return;
       }
 
       audioLoading = true;
-      status.textContent = '最新の録音を確認しています…';
 
       try {
         const base = String(cfg.supabaseUrl).replace(/\/+$/, '');
@@ -528,13 +523,10 @@
         player.load();
 
 
-        fileName.textContent = '最新の録音';
-        status.textContent = `${AUDIO_OBJECT} ・ 再生URLを取得しました`;
-        player.hidden = false;
+        player.hidden = true;
       } catch (e) {
         console.error('Supabase録音取得エラー:', e);
-        fileName.textContent = '録音を取得できません';
-        status.textContent = e.message || 'Supabaseの設定と通信を確認してください。';
+        console.error('呼び出し録音を取得できません:', e.message || e);
         player.pause();
         player.removeAttribute('src');
         player.load();
@@ -809,8 +801,6 @@
     });
 
     if ($('refreshBtn')) $('refreshBtn').addEventListener('click', refresh);
-    if ($('historyRefresh')) $('historyRefresh').addEventListener('click', refresh);
-    if ($('audioRefresh')) $('audioRefresh').addEventListener('click', refreshLatestAudio);
     window.addEventListener('resize', drawChart);
 
     // 古いService Workerを解除し、キャッシュによる不具合を防ぐ
@@ -833,7 +823,6 @@
     refreshLatestAudio();
 
     setInterval(refresh, Math.max(30000, Number(cfg.refreshMs) || 30000));
-    setInterval(refreshLatestAudio, Math.max(60000, Number(cfg.audioRefreshMs) || 60000));
   }
 
   if (sessionStorage.getItem('indoorMonitorLoggedIn') === '1') {
