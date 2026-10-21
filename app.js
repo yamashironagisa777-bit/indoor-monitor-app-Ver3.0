@@ -158,6 +158,273 @@
     }
 
 
+
+    // 追加ダッシュボード機能は現段階ではWebブラウザ内で動作します。
+    const DASHBOARD_KEY = 'indoorMonitorDashboardSettings';
+    const EVENTS_KEY = 'indoorMonitorRecentEvents';
+    let selectedRangeDays = 1;
+    let previousSensorState = {};
+    let wakeEvents = [];
+    let dashboardSettings = loadDashboardSettings();
+    let recentEvents = loadEvents();
+
+    function loadDashboardSettings() {
+      const defaults = {
+        fanMode: 'AUTO', fanOn: false,
+        notifyDoor: true, notifyGas: true, notifyCall: true,
+        gasThreshold: 400
+      };
+      try {
+        const saved = JSON.parse(localStorage.getItem(DASHBOARD_KEY) || 'null');
+        return saved ? { ...defaults, ...saved } : defaults;
+      } catch (_) { return defaults; }
+    }
+
+    function saveDashboardSettings() {
+      try {
+        localStorage.setItem(DASHBOARD_KEY, JSON.stringify(dashboardSettings));
+      } catch (error) {
+        console.warn('ダッシュボード設定を保存できません:', error);
+      }
+    }
+
+    function loadEvents() {
+      try {
+        const value = JSON.parse(localStorage.getItem(EVENTS_KEY) || '[]');
+        return Array.isArray(value) ? value.slice(0, 30) : [];
+      } catch (_) { return []; }
+    }
+
+    function logEvent(category, message) {
+      const item = {
+        time: new Date().toISOString(),
+        category: String(category || '情報'),
+        message: String(message || '')
+      };
+      recentEvents.unshift(item);
+      recentEvents = recentEvents.slice(0, 30);
+      try { localStorage.setItem(EVENTS_KEY, JSON.stringify(recentEvents)); } catch (_) {}
+      renderEvents();
+    }
+
+    function renderEvents() {
+      const list = $('recentEvents');
+      if (!list) return;
+      list.replaceChildren();
+      if (!recentEvents.length) {
+        const li = document.createElement('li');
+        li.textContent = 'まだ出来事はありません。';
+        list.appendChild(li);
+        return;
+      }
+      recentEvents.slice(0, 8).forEach(event => {
+        const li = document.createElement('li');
+        const time = document.createElement('span');
+        time.className = 'event-time';
+        const d = new Date(event.time);
+        time.textContent = Number.isNaN(d.getTime())
+          ? '--:--'
+          : d.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+        const body = document.createElement('span');
+        const tag = document.createElement('span');
+        tag.className = 'event-tag';
+        tag.textContent = event.category;
+        body.append(tag, document.createTextNode(event.message));
+        li.append(time, body);
+        list.appendChild(li);
+      });
+    }
+
+    function renderFanControls() {
+      document.querySelectorAll('[data-fan-mode]').forEach(button => {
+        const active = button.dataset.fanMode === dashboardSettings.fanMode;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', String(active));
+      });
+      const badge = $('fanStateBadge');
+      if (badge) badge.textContent = dashboardSettings.fanOn ? '運転中（画面内）' : '停止中（画面内）';
+      const on = $('fanOnBtn');
+      const off = $('fanOffBtn');
+      if (on) on.disabled = dashboardSettings.fanMode !== 'MANUAL';
+      if (off) off.disabled = dashboardSettings.fanMode !== 'MANUAL';
+      const status = $('fanControlStatus');
+      if (status) {
+        status.textContent = dashboardSettings.fanMode === 'AUTO'
+          ? '自動モードです。上限・下限温度を画面内に保存しています。実機への送信は未接続です。'
+          : '手動モードです。ON／OFF操作は画面内の状態だけを変更します。実機への送信は未接続です。';
+      }
+    }
+
+    function setupDashboardFeatures() {
+      // サーキュレーター（Web画面内の状態のみ）
+      document.querySelectorAll('[data-fan-mode]').forEach(button => {
+        button.addEventListener('click', () => {
+          dashboardSettings.fanMode = button.dataset.fanMode;
+          saveDashboardSettings();
+          renderFanControls();
+          logEvent('家電', '運転モードを' + (dashboardSettings.fanMode === 'AUTO' ? '自動' : '手動') + 'に変更');
+        });
+      });
+      if ($('fanOnBtn')) $('fanOnBtn').addEventListener('click', () => {
+        if (dashboardSettings.fanMode !== 'MANUAL') return;
+        dashboardSettings.fanOn = true;
+        saveDashboardSettings();
+        renderFanControls();
+        logEvent('家電', 'サーキュレーター ON（画面内のみ）');
+      });
+      if ($('fanOffBtn')) $('fanOffBtn').addEventListener('click', () => {
+        if (dashboardSettings.fanMode !== 'MANUAL') return;
+        dashboardSettings.fanOn = false;
+        saveDashboardSettings();
+        renderFanControls();
+        logEvent('家電', 'サーキュレーター OFF（画面内のみ）');
+      });
+
+      // 通知スイッチの保存
+      ['notifyDoor', 'notifyGas', 'notifyCall'].forEach(id => {
+        const input = $(id);
+        if (!input) return;
+        input.checked = Boolean(dashboardSettings[id]);
+        input.addEventListener('change', () => {
+          dashboardSettings[id] = input.checked;
+          saveDashboardSettings();
+          if ($('notificationStatus')) {
+            $('notificationStatus').textContent = '通知設定をこのブラウザに保存しました。';
+          }
+        });
+      });
+
+      if ($('testNotificationBtn')) $('testNotificationBtn').addEventListener('click', async () => {
+        const status = $('notificationStatus');
+        if (!('Notification' in window)) {
+          if (status) status.textContent = 'このブラウザは通知APIに対応していません。';
+          return;
+        }
+        try {
+          let permission = Notification.permission;
+          if (permission === 'default') permission = await Notification.requestPermission();
+          if (permission === 'granted') {
+            new Notification('室内監視システム', { body: 'テスト通知です。' });
+            if (status) status.textContent = 'テスト通知を表示しました。ブラウザの通知許可が有効です。';
+            logEvent('通知', 'テスト通知を実行');
+          } else if (status) {
+            status.textContent = '通知は許可されていません。ブラウザのサイト設定を確認してください。';
+          }
+        } catch (error) {
+          if (status) status.textContent = '通知を表示できませんでした: ' + error.message;
+        }
+      });
+
+      // 呼び出し確認・録音再生
+      if ($('ackCallAlert')) $('ackCallAlert').addEventListener('click', () => {
+        const card = $('callAlert');
+        if (card) card.classList.add('acknowledged');
+        if ($('callAlertTitle')) $('callAlertTitle').textContent = '呼び出しを確認済みにしました';
+        if ($('callAlertDetail')) $('callAlertDetail').textContent = 'この確認状態は現在の画面に表示しています。';
+        logEvent('呼び出し', '呼び出しを確認済みにした');
+      });
+      if ($('playCallAudio')) $('playCallAudio').addEventListener('click', async () => {
+        const player = $('latestAudio');
+        if (!player || !player.src) {
+          if ($('audioStatus')) $('audioStatus').textContent = '先に最新の録音を取得してください。';
+          return;
+        }
+        try { await player.play(); }
+        catch (error) {
+          if ($('audioStatus')) $('audioStatus').textContent = '再生できませんでした。再生ボタンを押してください。';
+        }
+      });
+
+      if ($('clearEventsBtn')) $('clearEventsBtn').addEventListener('click', () => {
+        recentEvents = [];
+        try { localStorage.removeItem(EVENTS_KEY); } catch (_) {}
+        renderEvents();
+      });
+
+      // グラフ期間切替
+      document.querySelectorAll('[data-range]').forEach(button => {
+        button.addEventListener('click', () => {
+          selectedRangeDays = Number(button.dataset.range) || 1;
+          document.querySelectorAll('[data-range]').forEach(item => {
+            const active = item === button;
+            item.classList.toggle('active', active);
+            item.setAttribute('aria-pressed', String(active));
+          });
+          drawChart();
+        });
+      });
+
+      renderFanControls();
+      renderEvents();
+      renderWakeHistory();
+    }
+
+    function renderWakeHistory() {
+      const current = $('wakeCurrentStatus');
+      const summary = $('wakeSummary');
+      const list = $('wakeHistory');
+      if (current) {
+        const bedText = $('bed')?.textContent || '--';
+        current.textContent = bedText === '在床あり' ? '在床あり' :
+          bedText === '在床なし' ? '離床中' : '在床状態を確認できません';
+      }
+      if (summary) summary.textContent = 'センサーの最新状態：' + (($('updatedAt')?.textContent || '').replace('最終更新：', '') || '--');
+      if (!list) return;
+      list.replaceChildren();
+      if (!wakeEvents.length) {
+        const li = document.createElement('li');
+        li.textContent = 'ページを開いてからの在床状態の変化がここに表示されます。';
+        list.appendChild(li);
+        return;
+      }
+      wakeEvents.slice(0, 5).forEach(event => {
+        const li = document.createElement('li');
+        const time = document.createElement('span');
+        time.className = 'event-time';
+        time.textContent = event.time;
+        const body = document.createElement('span');
+        body.textContent = event.message;
+        li.append(time, body);
+        list.appendChild(li);
+      });
+    }
+
+    function trackSensorEvents(feed) {
+      if (!feed) return;
+      const current = {
+        door: Number(feed.field4) >= 1,
+        bed: Number(feed.field5) >= 1,
+        gas: Number(feed.field3)
+      };
+      if (previousSensorState.door !== undefined && current.door !== previousSensorState.door) {
+        const message = current.door ? 'ドアが開きました' : 'ドアが閉まりました';
+        logEvent('ドア', message);
+        if (dashboardSettings.notifyDoor) showBrowserNotification('ドア状態', message);
+      }
+      if (previousSensorState.bed !== undefined && current.bed !== previousSensorState.bed) {
+        const message = current.bed ? '在床を検知しました' : '離床を検知しました';
+        wakeEvents.unshift({
+          time: new Date().toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'}),
+          message
+        });
+        wakeEvents = wakeEvents.slice(0, 10);
+        renderWakeHistory();
+        logEvent('ベッド', message);
+      }
+      if (Number.isFinite(current.gas) && previousSensorState.gas !== undefined &&
+          current.gas >= dashboardSettings.gasThreshold && previousSensorState.gas < dashboardSettings.gasThreshold) {
+        logEvent('ガス', '設定しきい値を超えました（校正前の値）');
+        if (dashboardSettings.notifyGas) showBrowserNotification('ガスセンサー', 'しきい値を超えました。現地を確認してください。');
+      }
+      previousSensorState = current;
+      renderWakeHistory();
+    }
+
+    function showBrowserNotification(title, body) {
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+      try { new Notification(title, { body }); } catch (_) {}
+    }
+
     function formatAudioDate(value) {
       if (!value) return '';
       const d = new Date(value);
@@ -395,12 +662,14 @@
         if (last && last.created_at) {
           latestFeed = last;
           renderLatest(last);
+          trackSensorEvents(last);
         }
         feeds = Array.isArray(history.feeds) ? history.feeds : [];
 
         if (!latestFeed && feeds.length) {
           latestFeed = feeds[feeds.length - 1];
           renderLatest(latestFeed);
+          trackSensorEvents(latestFeed);
         }
         if (!latestFeed) {
           throw new Error('データがまだありません。Piから最初のデータを送信してください。');
@@ -442,18 +711,20 @@
       const h = rect.height;
       ctx.clearRect(0, 0, w, h);
 
+      const cutoff = Date.now() - selectedRangeDays * 24 * 60 * 60 * 1000;
       const data = feeds
         .filter(f =>
           f['field' + selectedField] !== null &&
           f['field' + selectedField] !== '' &&
-          Number.isFinite(Number(f['field' + selectedField]))
+          Number.isFinite(Number(f['field' + selectedField])) &&
+          f.created_at && new Date(f.created_at).getTime() >= cutoff
         )
-        .slice(-100);
+        .slice(-500);
 
       const meta = labels[selectedField];
       if ($('chartTitle')) $('chartTitle').textContent = meta.title;
       if ($('legendText')) $('legendText').textContent = meta.legend;
-      if ($('chartRange')) $('chartRange').textContent = data.length ? `${data.length}件の記録` : '記録なし';
+      if ($('chartRange')) $('chartRange').textContent = data.length ? `${selectedRangeDays === 1 ? '24時間' : selectedRangeDays + '日'}・${data.length}件` : '記録なし';
       if ($('chartEmpty')) $('chartEmpty').style.display = data.length ? 'none' : 'grid';
       if (!data.length) return;
 
@@ -556,6 +827,7 @@
     }
 
     setupTemperatureSettings();
+    setupDashboardFeatures();
 
     refresh();
     refreshLatestAudio();
