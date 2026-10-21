@@ -822,7 +822,16 @@
     refresh();
     refreshLatestAudio();
 
-    setInterval(refresh, Math.max(30000, Number(cfg.refreshMs) || 30000));
+    const refreshInterval = Math.max(30000, Number(cfg.refreshMs) || 30000);
+    setInterval(refresh, refreshInterval);
+
+    // 音声も定期的に最新URLへ更新する。再生中は中断しない。
+    setInterval(() => {
+      const player = $('latestAudio');
+      if (!player || player.paused || player.ended) {
+        refreshLatestAudio();
+      }
+    }, refreshInterval);
   }
 
   if (sessionStorage.getItem('indoorMonitorLoggedIn') === '1') {
