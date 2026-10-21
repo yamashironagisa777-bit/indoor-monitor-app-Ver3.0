@@ -58,7 +58,105 @@
     };
     const AUDIO_BUCKET = cfg.supabaseBucket || 'recordings';
     const AUDIO_OBJECT = cfg.latestAudioPath || 'latest.wav';
+
     let audioLoading = false;
+
+    // 自動運転の温度しきい値（現段階ではこのブラウザ内だけに保存）
+    const TEMP_SETTINGS_KEY = 'indoorMonitorTemperatureSettings';
+    const DEFAULT_TEMP_SETTINGS = { upper: 28, lower: 26 };
+    let temperatureSettings = loadTemperatureSettings();
+
+    function loadTemperatureSettings() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(TEMP_SETTINGS_KEY) || 'null');
+        if (
+          saved &&
+          Number.isFinite(Number(saved.upper)) &&
+          Number.isFinite(Number(saved.lower)) &&
+          Number(saved.upper) >= 15 &&
+          Number(saved.upper) <= 40 &&
+          Number(saved.lower) >= 15 &&
+          Number(saved.lower) <= 40 &&
+          Number(saved.upper) > Number(saved.lower)
+        ) {
+          return { upper: Number(saved.upper), lower: Number(saved.lower) };
+        }
+      } catch (error) {
+        console.warn('温度設定を読み込めませんでした:', error);
+      }
+      return { ...DEFAULT_TEMP_SETTINGS };
+    }
+
+    function saveTemperatureSettings() {
+      try {
+        localStorage.setItem(TEMP_SETTINGS_KEY, JSON.stringify(temperatureSettings));
+        const status = $('temperatureSettingsStatus');
+        if (status) status.textContent = 'このブラウザに設定を保存しました（機器への送信は未実装です）。';
+      } catch (error) {
+        const status = $('temperatureSettingsStatus');
+        if (status) status.textContent = '保存できませんでした。ブラウザの保存設定を確認してください。';
+      }
+    }
+
+    function renderTemperatureSettings() {
+      if ($('autoUpperLimit')) $('autoUpperLimit').textContent = String(temperatureSettings.upper);
+      if ($('autoLowerLimit')) $('autoLowerLimit').textContent = String(temperatureSettings.lower);
+      document.querySelectorAll('[data-temp-target]').forEach(button => {
+        const target = button.dataset.tempTarget;
+        const delta = Number(button.dataset.tempDelta);
+        const next = temperatureSettings[target] + delta;
+        button.disabled = next < 15 || next > 40 ||
+          (target === 'upper' && next <= temperatureSettings.lower) ||
+          (target === 'lower' && next >= temperatureSettings.upper);
+      });
+    }
+
+    function changeTemperatureSetting(target, delta) {
+      const next = temperatureSettings[target] + delta;
+      if (!Number.isFinite(next) || next < 15 || next > 40) return;
+
+      if (target === 'upper' && next <= temperatureSettings.lower) {
+        const status = $('temperatureSettingsStatus');
+        if (status) status.textContent = '上限温度は下限温度より高く設定してください。';
+        return;
+      }
+      if (target === 'lower' && next >= temperatureSettings.upper) {
+        const status = $('temperatureSettingsStatus');
+        if (status) status.textContent = '下限温度は上限温度より低く設定してください。';
+        return;
+      }
+
+      temperatureSettings[target] = next;
+      renderTemperatureSettings();
+      saveTemperatureSettings();
+    }
+
+    function setupTemperatureSettings() {
+      renderTemperatureSettings();
+      document.querySelectorAll('[data-temp-target]').forEach(button => {
+        button.addEventListener('click', () => {
+          changeTemperatureSetting(
+            button.dataset.tempTarget,
+            Number(button.dataset.tempDelta)
+          );
+        });
+      });
+
+      const resetButton = $('resetTemperatureSettings');
+      if (resetButton) {
+        resetButton.addEventListener('click', () => {
+          temperatureSettings = { ...DEFAULT_TEMP_SETTINGS };
+          renderTemperatureSettings();
+          saveTemperatureSettings();
+        });
+      }
+
+      const status = $('temperatureSettingsStatus');
+      if (status) {
+        status.textContent = '設定を読み込みました。変更内容はこのブラウザに保存されます。';
+      }
+    }
+
 
     function formatAudioDate(value) {
       if (!value) return '';
@@ -456,6 +554,8 @@
           console.warn('Service Workerの解除に失敗しました:', error);
         });
     }
+
+    setupTemperatureSettings();
 
     refresh();
     refreshLatestAudio();
