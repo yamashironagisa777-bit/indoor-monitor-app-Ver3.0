@@ -99,13 +99,6 @@
     <button id="logoutButton" class="logout-btn" type="button">ログアウト</button>
   </header>
   <main>
-    <section class="status-row">
-      <div><span id="connectionDot" class="dot"></span><span id="connectionText">接続確認中</span></div>
-      <span id="updatedAt" class="muted">最終更新：--</span>
-    </section>
-    <section class="alert-card" id="alertCard" aria-live="polite">
-      <div class="alert-icon" id="alertIcon">✓</div><div><strong id="alertTitle">状態を確認しています</strong><p id="alertDetail">クラウドから最新データを取得しています。</p></div>
-    </section>
     <section id="callAlert" class="call-alert" aria-live="polite">
       <div class="alert-icon" id="callAlertIcon">!</div>
       <div style="flex:1;min-width:160px">
@@ -116,6 +109,7 @@
         <button id="playCallAudio" type="button" class="primary-btn">▶ 録音を再生</button>
         <button id="ackCallAlert" type="button" class="secondary-btn">確認済みにする</button>
       </div>
+      <audio id="latestAudio" preload="none" hidden></audio>
     </section>
     <h2>現在の状態</h2>
     <section class="metric-grid">
@@ -123,7 +117,6 @@
       <article class="metric-card"><div class="metric-label">湿度</div><div class="metric-value"><span id="humidity">--</span><small>%</small></div><div class="metric-foot">相対湿度</div></article>
       <article class="metric-card"><div class="metric-label">ガスセンサー値</div><div class="metric-value"><span id="gas">--</span></div><div class="metric-foot">校正前の値は参考値</div></article>
       <article class="metric-card"><div class="metric-label">ドア</div><div class="state-value" id="door">--</div><div class="metric-foot">開閉センサー</div></article>
-      <article class="metric-card wide"><div class="metric-label">ベッド・枕の在床</div><div class="state-value" id="bed">--</div><div class="metric-foot">圧力センサー</div></article>
     </section>
     <section class="control-settings" aria-labelledby="controlSettingsTitle">
       <h2 id="controlSettingsTitle">自動運転の温度設定</h2>
@@ -190,21 +183,11 @@
       </section>
 
       <section class="panel" aria-labelledby="eventsTitle">
-        <div class="panel-header"><h2 id="eventsTitle">最近の出来事</h2><button type="button" id="clearEventsBtn" class="secondary-btn">履歴クリア</button></div>
+        <div class="panel-header"><h2 id="eventsTitle">最近の出来事</h2></div>
         <ul id="recentEvents" class="event-list"><li>センサー情報を取得するとイベントが表示されます。</li></ul>
       </section>
     </div>
-
-    <section class="section-head audio-section-head"><div><h2>最新の録音</h2><p class="muted">Raspberry Piで録音した音声</p></div><button id="audioRefresh" class="secondary-btn" type="button">録音更新</button></section>
-    <section class="audio-card" aria-live="polite">
-      <div class="audio-file-icon" aria-hidden="true">♫</div>
-      <div class="audio-file-info">
-        <strong id="audioFileName">録音データを確認しています…</strong>
-        <p id="audioStatus" class="muted">Supabaseから最新の録音を取得しています。</p>
-      </div>
-      <audio id="latestAudio" controls preload="none" hidden></audio>
-    </section>
-    <section class="section-head"><div><h2>センサー履歴</h2><p class="muted">保存された測定データの推移</p></div><button id="historyRefresh" class="secondary-btn">履歴更新</button></section>
+    <section class="section-head"><div><h2>温湿度の履歴</h2><p class="muted">保存された測定データの推移</p></div></section>
     <section class="history-card">
       <div class="tabs" role="group" aria-label="グラフ項目">
         <button class="tab active" data-field="1">室温</button><button class="tab" data-field="2">湿度</button><button class="tab" data-field="3">ガス値</button>
@@ -218,8 +201,6 @@
       <div class="chart-wrap"><canvas id="historyChart" aria-label="センサー履歴グラフ" role="img"></canvas><div id="chartEmpty" class="chart-empty">履歴データを読み込んでいます…</div></div>
       <div class="chart-legend"><span class="legend-dot"></span><span id="legendText">室温（℃）</span></div>
     </section>
-    <section class="note-card"><strong>表示について</strong><p>この画面はクラウドに届いた測定値を表示します。通信が切れている場合、表示値が古い可能性があります。ガス値はセンサーの種類・校正により意味が異なるため、校正前に安全判定へ使用しないでください。</p></section>
-    <footer>室内監視システム · Android向けWebアプリ</footer>
   </main>
   <nav class="bottom-nav"><a class="nav-item selected" href="#top" aria-current="page"><span>▦</span>現在の状態</a><a class="nav-item" href="#historyChart"><span>⌁</span>履歴グラフ</a></nav>
   </div>
