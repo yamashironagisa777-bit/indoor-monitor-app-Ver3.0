@@ -32,6 +32,45 @@
     .temperature-value { min-width: 2ch; text-align: center; font-size: 1.25rem; font-weight: 700; }
     #temperatureSettingsStatus { min-height: 1.4em; font-size: .85rem; }
     @media (max-width: 420px) { .temperature-setting-row { align-items: flex-start; flex-direction: column; } }
+
+    .dashboard-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin:16px 0; }
+    .panel { background:#fff; border:1px solid #dce4ec; border-radius:14px; padding:16px; min-width:0; }
+    .panel h2 { margin:0 0 12px; font-size:1.02rem; }
+    .panel p { line-height:1.5; }
+    .panel-header { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+    .pill { display:inline-flex; align-items:center; border-radius:999px; padding:5px 10px; background:#e8f5ee; color:#13795b; font-size:.78rem; font-weight:700; }
+    .button-row { display:flex; gap:8px; flex-wrap:wrap; }
+    .button-row button { flex:1; min-width:100px; }
+    .primary-btn,.danger-btn,.secondary-btn,.fan-btn,.range-btn { border-radius:9px; padding:10px 13px; border:1px solid #d5dee7; font:inherit; font-weight:650; cursor:pointer; }
+    .primary-btn { background:#0f9d8a; color:#fff; border-color:#0f9d8a; }
+    .danger-btn { background:#fff1f0; color:#b42318; border-color:#f4b4af; }
+    .secondary-btn,.fan-btn,.range-btn { background:#f3f5f7; color:#29465d; }
+    .fan-btn.active,.range-btn.active { background:#123b5d; color:white; border-color:#123b5d; }
+    .fan-status { margin:10px 0 0; padding:9px 10px; border-radius:8px; background:#f5f8fb; font-size:.82rem; color:#536779; }
+    .setting-row,.toggle-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:11px 0; border-bottom:1px solid #e5ebf0; }
+    .setting-row:last-child,.toggle-row:last-child { border-bottom:0; }
+    .setting-row small,.toggle-row small { display:block; color:#738391; margin-top:3px; }
+    .switch { appearance:none; width:44px; height:26px; border-radius:99px; background:#cbd5df; position:relative; flex:0 0 44px; cursor:pointer; transition:background .15s; }
+    .switch:before { content:""; position:absolute; width:20px; height:20px; border-radius:50%; top:3px; left:3px; background:white; box-shadow:0 1px 3px #0002; transition:transform .15s; }
+    .switch:checked { background:#0f9d8a; }
+    .switch:checked:before { transform:translateX(18px); }
+    .event-list { list-style:none; margin:0; padding:0; }
+    .event-list li { display:flex; gap:10px; align-items:flex-start; padding:10px 0; border-bottom:1px solid #e5ebf0; font-size:.88rem; }
+    .event-list li:last-child { border-bottom:0; }
+    .event-time { color:#738391; white-space:nowrap; font-size:.78rem; }
+    .event-tag { display:inline-block; border-radius:6px; padding:2px 6px; font-size:.72rem; font-weight:700; background:#eaf2ff; color:#2463a6; margin-right:5px; }
+    .alert-actions { margin-left:auto; display:flex; gap:8px; flex-wrap:wrap; }
+    .call-alert { display:flex; align-items:center; gap:12px; padding:14px; border:1px solid #ffb4b0; border-radius:12px; background:#fff1f0; margin:14px 0; }
+    .call-alert .alert-icon { background:#dc2626; color:#fff; flex:0 0 34px; }
+    .call-alert p { margin:4px 0 0; font-size:.8rem; color:#7a4b4b; }
+    .call-alert.acknowledged { border-color:#dce4ec; background:#f8fafc; }
+    .call-alert.acknowledged .alert-icon { background:#94a3b8; }
+    .wake-status { padding:10px; background:#f2f8f5; border-radius:9px; color:#13795b; font-weight:700; margin-bottom:10px; }
+    .range-controls { display:flex; gap:6px; flex-wrap:wrap; margin:10px 0; }
+    .range-btn { padding:7px 12px; font-size:.83rem; }
+    .small-note { color:#738391; font-size:.78rem; }
+    @media (max-width:700px) { .dashboard-grid { grid-template-columns:1fr; } .call-alert { align-items:flex-start; flex-wrap:wrap; } .alert-actions { margin-left:0; width:100%; } }
+
   </style>
   <title>室内監視システム</title>
 </head>
@@ -66,6 +105,17 @@
     </section>
     <section class="alert-card" id="alertCard" aria-live="polite">
       <div class="alert-icon" id="alertIcon">✓</div><div><strong id="alertTitle">状態を確認しています</strong><p id="alertDetail">クラウドから最新データを取得しています。</p></div>
+    </section>
+    <section id="callAlert" class="call-alert" aria-live="polite">
+      <div class="alert-icon" id="callAlertIcon">!</div>
+      <div style="flex:1;min-width:160px">
+        <strong id="callAlertTitle">呼び出しはありません</strong>
+        <p id="callAlertDetail">呼び出しボタンの通知状態を表示します。</p>
+      </div>
+      <div class="alert-actions">
+        <button id="playCallAudio" type="button" class="primary-btn">▶ 録音を再生</button>
+        <button id="ackCallAlert" type="button" class="secondary-btn">確認済みにする</button>
+      </div>
     </section>
     <h2>現在の状態</h2>
     <section class="metric-grid">
@@ -103,6 +153,48 @@
       <p id="temperatureSettingsStatus" class="muted" role="status" aria-live="polite">設定を読み込んでいます。</p>
       <button type="button" id="resetTemperatureSettings" class="secondary-btn">初期値に戻す</button>
     </section>
+    <div class="dashboard-grid">
+      <section class="panel" aria-labelledby="fanTitle">
+        <div class="panel-header"><h2 id="fanTitle">サーキュレーター</h2><span id="fanStateBadge" class="pill">停止中</span></div>
+        <div class="setting-row"><div><strong>運転モード</strong><small>自動運転／手動操作</small></div>
+          <div class="button-row" style="flex:0 0 auto">
+            <button type="button" class="fan-btn active" data-fan-mode="AUTO">自動</button>
+            <button type="button" class="fan-btn" data-fan-mode="MANUAL">手動</button>
+          </div>
+        </div>
+        <div class="setting-row"><div><strong>手動操作</strong><small>手動モード時に操作できます</small></div>
+          <div class="button-row" style="flex:0 0 auto">
+            <button type="button" id="fanOnBtn" class="fan-btn">ON</button>
+            <button type="button" id="fanOffBtn" class="fan-btn">OFF</button>
+          </div>
+        </div>
+        <p id="fanControlStatus" class="fan-status" role="status">この操作はWeb画面内の状態のみ変更します。実機への命令送信は未接続です。</p>
+      </section>
+
+      <section class="panel" aria-labelledby="wakeTitle">
+        <h2 id="wakeTitle">起床チェック</h2>
+        <div id="wakeCurrentStatus" class="wake-status">在床状態を確認しています</div>
+        <p id="wakeSummary" class="small-note">ベッドセンサーの状態変化をもとに表示します。</p>
+        <h3 style="font-size:.9rem;margin:14px 0 6px">最近の起床・在床イベント</h3>
+        <ul id="wakeHistory" class="event-list"><li>まだイベントがありません。</li></ul>
+        <p class="small-note">起床時刻の確定はWeb画面側の簡易判定です。</p>
+      </section>
+
+      <section class="panel" aria-labelledby="notifyTitle">
+        <h2 id="notifyTitle">スマホ通知</h2>
+        <div class="toggle-row"><div><strong>ドア開閉の通知</strong><small>ドア状態が変わったとき</small></div><input class="switch" id="notifyDoor" type="checkbox" aria-label="ドア開閉の通知"></div>
+        <div class="toggle-row"><div><strong>ガス・煙の通知</strong><small>設定したしきい値を超えたとき（画面内判定）</small></div><input class="switch" id="notifyGas" type="checkbox" aria-label="ガス・煙の通知"></div>
+        <div class="toggle-row"><div><strong>呼び出しの通知</strong><small>呼び出しイベントが発生したとき</small></div><input class="switch" id="notifyCall" type="checkbox" aria-label="呼び出しの通知"></div>
+        <button type="button" id="testNotificationBtn" class="primary-btn" style="margin-top:12px;width:100%">テスト通知を送る</button>
+        <p id="notificationStatus" class="small-note" role="status">通知設定はこのブラウザに保存されます。</p>
+      </section>
+
+      <section class="panel" aria-labelledby="eventsTitle">
+        <div class="panel-header"><h2 id="eventsTitle">最近の出来事</h2><button type="button" id="clearEventsBtn" class="secondary-btn">履歴クリア</button></div>
+        <ul id="recentEvents" class="event-list"><li>センサー情報を取得するとイベントが表示されます。</li></ul>
+      </section>
+    </div>
+
     <section class="section-head audio-section-head"><div><h2>最新の録音</h2><p class="muted">Raspberry Piで録音した音声</p></div><button id="audioRefresh" class="secondary-btn" type="button">録音更新</button></section>
     <section class="audio-card" aria-live="polite">
       <div class="audio-file-icon" aria-hidden="true">♫</div>
@@ -116,6 +208,11 @@
     <section class="history-card">
       <div class="tabs" role="group" aria-label="グラフ項目">
         <button class="tab active" data-field="1">室温</button><button class="tab" data-field="2">湿度</button><button class="tab" data-field="3">ガス値</button>
+      </div>
+      <div class="range-controls" role="group" aria-label="表示期間">
+        <button type="button" class="range-btn active" data-range="1">24時間</button>
+        <button type="button" class="range-btn" data-range="7">7日</button>
+        <button type="button" class="range-btn" data-range="30">30日</button>
       </div>
       <div class="chart-summary"><strong id="chartTitle">室温の推移</strong><span id="chartRange">直近の記録</span></div>
       <div class="chart-wrap"><canvas id="historyChart" aria-label="センサー履歴グラフ" role="img"></canvas><div id="chartEmpty" class="chart-empty">履歴データを読み込んでいます…</div></div>
