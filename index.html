@@ -1,222 +1,132 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>見守り画面</title>
-<style>
-@font-face{font-family:N;src:url(NotoSansJP.ttf)}
-:root{--pink:#d6336c;--teal:#149687;--orange:#f59f00;--red:#e03131;--blue:#2f6fdb;--ink:#222;--sub:#6b6f76;--line:#e6e8ec;--bg:#f6f7f9}
-*{box-sizing:border-box}
-body{margin:0;font-family:N,"Noto Sans JP",sans-serif;background:var(--bg);color:var(--ink)}
-header{background:var(--pink);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:18px 32px}
-header h1{margin:0;font-size:28px;font-weight:700;letter-spacing:.05em}
-header .meta{font-size:16px;opacity:.95;display:flex;gap:24px;align-items:center}
-.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#8ce99a;margin-right:6px}
-.dot.bad{background:#ffa8a8}
-main{padding:24px 32px 32px;display:grid;gap:20px}
-.alert{background:#fff0f0;border:2px solid var(--red);border-radius:14px;padding:16px 22px;display:flex;align-items:center;gap:18px}
-.alert .ic{width:46px;height:46px;border-radius:50%;background:var(--red);display:grid;place-items:center;color:#fff;font-size:24px;font-weight:700}
-.alert b{font-size:22px;color:var(--red)}
-.alert span{color:var(--sub);font-size:16px}
-.alert .sp{flex:1}
-.btn{border:none;border-radius:999px;padding:12px 26px;font:700 18px N,sans-serif;color:#fff;cursor:pointer}
-.btn.teal{background:var(--teal)}.btn.gray{background:#adb5bd}.btn.orange{background:var(--orange)}
-.row{display:grid;gap:20px}
-.r4{grid-template-columns:repeat(4,1fr)}
-.r3{grid-template-columns:1.25fr 1fr 1fr}
-.r2{grid-template-columns:1.6fr 1fr}
-.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px 22px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
-.card h2{margin:0 0 14px;font-size:18px;color:var(--sub);font-weight:700;display:flex;justify-content:space-between;align-items:center}
-.big{font-size:44px;font-weight:700;line-height:1.1}
-.big small{font-size:22px;margin-left:4px;color:var(--sub);font-weight:400}
-.note{color:var(--sub);font-size:15px;margin-top:8px}
-.pill{display:inline-block;padding:6px 16px;border-radius:999px;font-weight:700;font-size:18px}
-.ok{background:#e6f7ee;color:#2b8a3e}.warn{background:#fff4e0;color:#c77700}.info{background:#e7f0ff;color:var(--blue)}.bad{background:#fff0f0;color:#e03131}
-.seg{display:inline-flex;background:#f1f3f5;border-radius:999px;padding:4px}
-.seg button{border:none;background:none;padding:10px 22px;border-radius:999px;font:700 17px N,sans-serif;color:var(--sub)}
-.seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.15)}
-.fanrow{display:flex;align-items:center;gap:16px;margin:6px 0 14px}
-.toggle{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--line);font-size:18px}
-.toggle:last-child{border-bottom:none}
-.toggle .d{color:var(--sub);font-size:14px;display:block}
-.sw{width:64px;height:36px;border-radius:999px;background:#ced4da;position:relative;flex:none;cursor:pointer;border:none}
-.sw::after{content:"";position:absolute;top:4px;left:4px;width:28px;height:28px;border-radius:50%;background:#fff;transition:.2s}
-.sw.on{background:var(--teal)}.sw.on::after{left:32px}
-.sw.lock{opacity:.55;cursor:default}
-.list{margin:0;padding:0;list-style:none}
-.list li{display:flex;align-items:center;gap:12px;white-space:nowrap;padding:12px 0;border-bottom:1px solid var(--line);font-size:17px}
-.list li:last-child{border-bottom:none}
-.wk li{padding:8px 0;font-size:16px}
-.list .t{color:var(--sub);width:56px;flex:none;font-size:16px}
-.list .sp{flex:1}
-.tag{font-size:13px;font-weight:700;padding:3px 10px;border-radius:999px;color:#fff}
-.mini{padding:8px 18px;font-size:15px}
-.legend{display:flex;gap:18px;font-size:15px;color:var(--sub);font-weight:400}
-.legend i{display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle}
-.lbl{font-size:16px;color:var(--sub);width:88px}
-.sub{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}
-.subt{font-size:15px;font-weight:700;color:var(--sub);margin-bottom:10px}
-.btn.dark{background:#495057}
-.btn:disabled{background:#dee2e6;color:#adb5bd;cursor:not-allowed}
-.sub.off .subt,.sub.off .step{opacity:.45}
-.step{display:flex;align-items:center;gap:10px;margin:8px 0}
-.step span{flex:1;font-size:18px;font-weight:700}
-.step small{display:block;font-size:13px;color:var(--sub);font-weight:400}
-.step button{width:44px;height:44px;border-radius:50%;border:2px solid var(--line);background:#fff;font:700 22px N,sans-serif;cursor:pointer;color:var(--ink)}
-.step b{font-size:30px;width:48px;text-align:right}
-.step em{font-style:normal;color:var(--sub);margin-right:4px}
-svg text{font-family:N,sans-serif}
-</style></head>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#123b5d">
+  <meta name="description" content="室内監視システムの状態とセンサー履歴を確認するアプリ">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    [hidden] { display: none !important; }
+    .login-screen { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: #f2f6fa; box-sizing: border-box; }
+    .login-card { width: min(100%, 390px); box-sizing: border-box; background: #fff; border-radius: 20px; padding: 28px; box-shadow: 0 12px 36px rgba(18,59,93,.12); }
+    .login-mark { width: 54px; height: 54px; border-radius: 16px; background: #123b5d; color: white; display: grid; place-items: center; font-size: 30px; margin: 0 auto 14px; }
+    .login-card h1 { text-align: center; font-size: 1.45rem; margin: 0 0 6px; color: #123b5d; }
+    .login-subtitle { text-align: center; color: #64748b; margin: 0 0 24px; }
+    .login-card label { display: block; font-weight: 600; margin: 14px 0 6px; }
+    .login-card input { box-sizing: border-box; width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 10px; font: inherit; }
+    .login-card button { width: 100%; margin-top: 20px; padding: 13px; border: 0; border-radius: 10px; background: #123b5d; color: white; font: inherit; font-weight: 700; }
+    .login-error { min-height: 1.4em; color: #b42318; font-size: .9rem; }
+    .login-warning { font-size: .78rem; color: #64748b; line-height: 1.5; margin-top: 18px; }
+    .logout-btn { margin-left: auto; border: 1px solid #d5dee7; border-radius: 9px; padding: 8px 12px; background: white; color: #123b5d; }
+
+    .control-settings { background: #fff; border: 1px solid #dce4ec; border-radius: 14px; padding: 16px; margin: 16px 0; }
+    .control-settings h2 { margin-top: 0; }
+    .temperature-setting-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid #e5ebf0; }
+    .temperature-setting-row:last-of-type { border-bottom: 0; }
+    .temperature-setting-row p { margin: 5px 0 0; font-size: .78rem; }
+    .temperature-stepper { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .temperature-step { width: 36px; height: 36px; border: 1px solid #d5dee7; border-radius: 50%; background: #f8fafc; color: #123b5d; font-size: 1.2rem; font-weight: 700; }
+    .temperature-value { min-width: 2ch; text-align: center; font-size: 1.25rem; font-weight: 700; }
+    #temperatureSettingsStatus { min-height: 1.4em; font-size: .85rem; }
+    @media (max-width: 420px) { .temperature-setting-row { align-items: flex-start; flex-direction: column; } }
+  </style>
+  <title>室内監視システム</title>
+</head>
 <body>
-<header>
-  <h1>見守り画面</h1>
-  <div class="meta"><span><span class="dot" id="dot"></span><span id="conn">母機と接続中</span></span><span>最終更新 <span id="upd">--</span></span></div>
-</header>
-<main>
-  <div class="alert">
-    <div class="ic">!</div>
-    <div><b>呼び出しがありました</b><br><span>13:40:12 に呼び出しボタンが押されました（録音 5秒）</span></div>
-    <div class="sp"></div>
-    <button class="btn teal">▶ 録音を再生</button>
-    <button class="btn gray">確認済みにする</button>
-  </div>
-
-  <div class="row r4">
-    <div class="card"><h2>温度</h2><div class="big"><span id="temp">--</span><small>℃</small></div><div class="note" id="tnote">ThingSpeakから取得</div></div>
-    <div class="card"><h2>湿度</h2><div class="big"><span id="hum">--</span><small>%</small></div><div class="note">ThingSpeakから取得</div></div>
-    <div class="card"><h2>ガス・煙</h2><span class="pill warn" id="gas">通信なし</span><div class="note">最終検知：なし（本日）</div></div>
-    <div class="card"><h2>ドア</h2><span class="pill info" id="door">通信なし</span><div class="note" id="doorNote">ドアセンサーの最新値</div></div>
-  </div>
-
-  <div class="row r3">
-    <div class="card">
-      <h2>扇風機<span class="pill warn" style="font-size:15px">運転中</span></h2>
-      <div class="fanrow"><span class="lbl">運転モード</span><span class="seg" id="mode"><button class="on" data-m="auto">自動</button><button data-m="manual">手動</button></span></div>
-      <div class="sub" id="manual">
-        <div class="subt">手動操作</div>
-        <div class="fanrow" style="margin:0"><button class="btn orange" id="on">ON</button><button class="btn dark" id="off">OFF</button></div>
-        <div class="note" id="mnote">自動運転中は操作できません（手動に切り替えると操作できます）</div>
+  <section id="loginScreen" class="login-screen">
+    <div class="login-card">
+      <div class="login-mark">⌂</div>
+      <h1>室内監視システム</h1>
+      <p class="login-subtitle">ご家族専用ログイン</p>
+      <form id="loginForm">
+        <label for="loginUsername">ユーザー名</label>
+        <input id="loginUsername" name="username" autocomplete="username" required>
+        <label for="loginPassword">パスワード</label>
+        <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
+        <button type="submit">ログイン</button>
+        <p id="loginError" class="login-error" role="alert" aria-live="polite"></p>
+      </form>
+      <p class="login-warning">簡易ログインです。認証情報はブラウザ側のコードから確認できるため、機密情報の保護には使えません。</p>
+    </div>
+  </section>
+  <div id="appContent" hidden>
+  <header class="topbar">
+    <div class="brand-mark">⌂</div>
+    <div><div class="eyebrow">HOME MONITOR</div><h1>室内監視システム</h1></div>
+    <button id="refreshBtn" class="icon-btn" aria-label="更新" title="更新">↻</button>
+    <button id="logoutButton" class="logout-btn" type="button">ログアウト</button>
+  </header>
+  <main>
+    <section class="status-row">
+      <div><span id="connectionDot" class="dot"></span><span id="connectionText">接続確認中</span></div>
+      <span id="updatedAt" class="muted">最終更新：--</span>
+    </section>
+    <section class="alert-card" id="alertCard" aria-live="polite">
+      <div class="alert-icon" id="alertIcon">✓</div><div><strong id="alertTitle">状態を確認しています</strong><p id="alertDetail">クラウドから最新データを取得しています。</p></div>
+    </section>
+    <h2>現在の状態</h2>
+    <section class="metric-grid">
+      <article class="metric-card"><div class="metric-label">室温</div><div class="metric-value"><span id="temperature">--</span><small>℃</small></div><div class="metric-foot">温度センサー</div></article>
+      <article class="metric-card"><div class="metric-label">湿度</div><div class="metric-value"><span id="humidity">--</span><small>%</small></div><div class="metric-foot">相対湿度</div></article>
+      <article class="metric-card"><div class="metric-label">ガスセンサー値</div><div class="metric-value"><span id="gas">--</span></div><div class="metric-foot">校正前の値は参考値</div></article>
+      <article class="metric-card"><div class="metric-label">ドア</div><div class="state-value" id="door">--</div><div class="metric-foot">開閉センサー</div></article>
+      <article class="metric-card wide"><div class="metric-label">ベッド・枕の在床</div><div class="state-value" id="bed">--</div><div class="metric-foot">圧力センサー</div></article>
+    </section>
+    <section class="control-settings" aria-labelledby="controlSettingsTitle">
+      <h2 id="controlSettingsTitle">自動運転の温度設定</h2>
+      <p class="muted">この設定は現在のブラウザに保存されます。まだRaspberry Piには送信されません。</p>
+      <div class="temperature-setting-row">
+        <div>
+          <strong>上限温度</strong>
+          <p class="muted">この温度以上でONにする設定</p>
+        </div>
+        <div class="temperature-stepper">
+          <button type="button" class="temperature-step" data-temp-target="upper" data-temp-delta="-1" aria-label="上限温度を1度下げる">−</button>
+          <output id="autoUpperLimit" class="temperature-value" aria-live="polite">28</output><span>℃</span>
+          <button type="button" class="temperature-step" data-temp-target="upper" data-temp-delta="1" aria-label="上限温度を1度上げる">＋</button>
+        </div>
       </div>
-      <div class="sub" id="auto">
-        <div class="subt">自動運転の温度設定</div>
-        <div class="step"><span>上限<small>この温度を超えたら運転</small></span><button data-k="hi" data-d="-1">−</button><b id="hi">28</b><em>℃</em><button data-k="hi" data-d="1">＋</button></div>
-        <div class="step"><span>下限<small>この温度を下回ったら停止</small></span><button data-k="lo" data-d="-1">−</button><b id="lo">26</b><em>℃</em><button data-k="lo" data-d="1">＋</button></div>
+      <div class="temperature-setting-row">
+        <div>
+          <strong>下限温度</strong>
+          <p class="muted">この温度以下でOFFにする設定</p>
+        </div>
+        <div class="temperature-stepper">
+          <button type="button" class="temperature-step" data-temp-target="lower" data-temp-delta="-1" aria-label="下限温度を1度下げる">−</button>
+          <output id="autoLowerLimit" class="temperature-value" aria-live="polite">26</output><span>℃</span>
+          <button type="button" class="temperature-step" data-temp-target="lower" data-temp-delta="1" aria-label="下限温度を1度上げる">＋</button>
+        </div>
       </div>
-    </div>
-    <div class="card">
-      <h2>起床チェック</h2>
-      <span class="pill ok">起床済み</span>
-      <div class="note" style="font-size:17px;color:var(--ink);margin-top:14px">起床 06:42　／　就寝 22:15（昨日）</div>
-      <div class="note">9:00 までに起床がない場合は画面でお知らせ</div>
-      <div class="sub"><div class="subt">最近の起床時刻</div>
-        <ul class="list wk">
-          <li><span class="t">10/14</span><span class="sp">起床 06:35</span><span class="note" style="margin:0">就寝 22:05</span></li>
-          <li><span class="t">10/13</span><span class="sp">起床 06:50</span><span class="note" style="margin:0">就寝 21:58</span></li>
-          <li><span class="t">10/12</span><span class="sp">起床 07:12</span><span class="note" style="margin:0">就寝 22:30</span></li>
-          <li><span class="t">10/11</span><span class="sp">起床 06:40</span><span class="note" style="margin:0">就寝 22:12</span></li>
-        </ul></div>
-    </div>
-    <div class="card">
-      <h2>スマホ通知</h2>
-      <div class="toggle"><div>ドア開閉の通知<span class="d">在宅中など不要なときはオフ</span></div><button class="sw on" onclick="this.classList.toggle('on')" aria-label="ドア開閉の通知"></button></div>
-      <div class="toggle"><div>ガス・煙の通知<span class="d">安全のため常にオン</span></div><span class="sw on lock"></span></div>
-      <div class="toggle"><div>呼び出しの通知<span class="d">安全のため常にオン</span></div><span class="sw on lock"></span></div>
-      <div class="sub"><div class="note" style="margin:0 0 12px">通知は登録したスマホに届きます（登録台数 2台）</div><button class="btn teal mini">テスト通知を送る</button></div>
-    </div>
+      <p id="temperatureSettingsStatus" class="muted" role="status" aria-live="polite">設定を読み込んでいます。</p>
+      <button type="button" id="resetTemperatureSettings" class="secondary-btn">初期値に戻す</button>
+    </section>
+    <section class="section-head audio-section-head"><div><h2>最新の録音</h2><p class="muted">Raspberry Piで録音した音声</p></div><button id="audioRefresh" class="secondary-btn" type="button">録音更新</button></section>
+    <section class="audio-card" aria-live="polite">
+      <div class="audio-file-icon" aria-hidden="true">♫</div>
+      <div class="audio-file-info">
+        <strong id="audioFileName">録音データを確認しています…</strong>
+        <p id="audioStatus" class="muted">Supabaseから最新の録音を取得しています。</p>
+      </div>
+      <audio id="latestAudio" controls preload="none" hidden></audio>
+    </section>
+    <section class="section-head"><div><h2>センサー履歴</h2><p class="muted">保存された測定データの推移</p></div><button id="historyRefresh" class="secondary-btn">履歴更新</button></section>
+    <section class="history-card">
+      <div class="tabs" role="group" aria-label="グラフ項目">
+        <button class="tab active" data-field="1">室温</button><button class="tab" data-field="2">湿度</button><button class="tab" data-field="3">ガス値</button>
+      </div>
+      <div class="chart-summary"><strong id="chartTitle">室温の推移</strong><span id="chartRange">直近の記録</span></div>
+      <div class="chart-wrap"><canvas id="historyChart" aria-label="センサー履歴グラフ" role="img"></canvas><div id="chartEmpty" class="chart-empty">履歴データを読み込んでいます…</div></div>
+      <div class="chart-legend"><span class="legend-dot"></span><span id="legendText">室温（℃）</span></div>
+    </section>
+    <section class="note-card"><strong>表示について</strong><p>この画面はクラウドに届いた測定値を表示します。通信が切れている場合、表示値が古い可能性があります。ガス値はセンサーの種類・校正により意味が異なるため、校正前に安全判定へ使用しないでください。</p></section>
+    <footer>室内監視システム · Android向けWebアプリ</footer>
+  </main>
+  <nav class="bottom-nav"><a class="nav-item selected" href="#top" aria-current="page"><span>▦</span>現在の状態</a><a class="nav-item" href="#historyChart"><span>⌁</span>履歴グラフ</a></nav>
   </div>
-
-  <div class="row r2">
-    <div class="card">
-      <h2>温湿度の履歴（24時間）<span class="seg"><button class="on">24時間</button><button>7日</button><button>30日</button></span></h2>
-      <div class="legend"><span><i style="background:var(--orange)"></i>温度（℃）</span><span><i style="background:var(--blue)"></i>湿度（%）</span><span><i style="background:#ffd8a8;height:10px"></i>扇風機 運転</span></div>
-      <svg id="chart" viewBox="0 0 820 300" width="100%"></svg>
-    </div>
-    <div class="card">
-      <h2>最近の出来事</h2>
-      <ul class="list">
-        <li><span class="t">13:40</span><span class="tag" style="background:var(--red)">呼び出し</span><span class="sp">ボタンが押されました</span><button class="btn teal mini">▶ 再生</button></li>
-        <li><span class="t">12:58</span><span class="tag" style="background:var(--blue)">ドア</span><span class="sp">ドアが開きました</span></li>
-        <li><span class="t">11:20</span><span class="tag" style="background:var(--orange)">扇風機</span><span class="sp">自動で運転を開始</span></li>
-        <li><span class="t">09:05</span><span class="tag" style="background:var(--red)">呼び出し</span><span class="sp">ボタンが押されました</span><button class="btn teal mini">▶ 再生</button></li>
-        <li><span class="t">07:10</span><span class="tag" style="background:var(--blue)">ドア</span><span class="sp">ドアが開きました</span></li>
-        <li><span class="t">06:42</span><span class="tag" style="background:#2b8a3e">起床</span><span class="sp">起床を確認しました</span></li>
-      </ul>
-    </div>
-  </div>
-</main>
-<script>
-(function(){
- const s=document.getElementById('chart'),W=820,H=300,L=46,R=46,T=20,B=40,pw=W-L-R,ph=H-T-B;
- const n=48,temp=[],hum=[];
- for(let i=0;i<=n;i++){const h=i/2;temp.push(25.2+3.6*Math.exp(-((h-14)**2)/18)+0.3*Math.sin(i*1.3));hum.push(68-8*Math.exp(-((h-14)**2)/22)+1.2*Math.sin(i*.9));}
- const x=i=>L+pw*i/n, yt=v=>T+ph*(1-(v-22)/10), yh=v=>T+ph*(1-(v-40)/40);
- let o='';
- // fan band 11:20-16:30
- o+=`<rect x="${x(22.7)}" y="${T}" width="${x(33)-x(22.7)}" height="${ph}" fill="#fff4e6"/>`;
- for(let k=0;k<=5;k++){const y=T+ph*k/5;o+=`<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="#eceef1"/>`;
-  o+=`<text x="${L-8}" y="${y+5}" font-size="13" fill="#c77700" text-anchor="end">${(32-2*k)}</text><text x="${W-R+8}" y="${y+5}" font-size="13" fill="#2f6fdb">${80-8*k}</text>`;}
- for(let hr=0;hr<=24;hr+=4)o+=`<text x="${x(hr*2)}" y="${H-12}" font-size="13" fill="#6b6f76" text-anchor="middle">${hr}:00</text>`;
- o+=`<line x1="${L}" x2="${W-R}" y1="${yt(28)}" y2="${yt(28)}" stroke="#f59f00" stroke-dasharray="6 5" opacity=".7"/><text x="${L+6}" y="${yt(28)-6}" font-size="12" fill="#c77700">上限 28℃</text>`;
- const p=(a,f)=>a.map((v,i)=>(i?'L':'M')+x(i).toFixed(1)+','+f(v).toFixed(1)).join('');
- o+=`<path d="${p(hum,yh)}" fill="none" stroke="#2f6fdb" stroke-width="3"/>`;
- o+=`<path d="${p(temp,yt)}" fill="none" stroke="#f59f00" stroke-width="3.5"/>`;
- s.innerHTML=o;
-})();
-</script>
-<script>
-(function(){
- const st={mode:'auto',hi:28,lo:26};
- const $=id=>document.getElementById(id);
- function render(){
-  document.querySelectorAll('#mode button').forEach(b=>b.classList.toggle('on',b.dataset.m===st.mode));
-  const auto=st.mode==='auto';
-  $('on').disabled=auto;$('off').disabled=auto;
-  $('mnote').textContent=auto?'自動運転中は操作できません（手動に切り替えると操作できます）':'ボタンで扇風機を運転・停止できます';
-  $('auto').classList.toggle('off',!auto);
-  $('hi').textContent=st.hi;$('lo').textContent=st.lo;
-  document.querySelectorAll('.step button').forEach(b=>{const k=b.dataset.k,d=+b.dataset.d,v=st[k]+d;
-   b.disabled=!auto||(k==='hi'?(v>35||v<=st.lo):(v<18||v>=st.hi));b.style.opacity=b.disabled?.35:1;});
- }
- document.querySelectorAll('#mode button').forEach(b=>b.onclick=()=>{st.mode=b.dataset.m;render();});
- document.querySelectorAll('.step button').forEach(b=>b.onclick=()=>{st[b.dataset.k]+=+b.dataset.d;render();});
- render();
-})();
-</script>
-<script>
-// ラズパイから届いた最新値を2秒ごとに取得して表示する
-(function(){
- const $=id=>document.getElementById(id);
- const pad=n=>String(n).padStart(2,'0');
- const fmt=d=>d.getFullYear()+'/'+pad(d.getMonth()+1)+'/'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
- async function poll(){
-  let d=null, reach=true;
-  try{
-   const r=await fetch('/api/latest',{cache:'no-store'});
-   d=await r.json();
-  }catch(e){ reach=false; }
-  const fresh = reach && d && d.received_at && (Date.now()/1000 - d.received_at) <= 10;
-  if(fresh){
-   $('temp').textContent = d.temperature;
-   $('hum').textContent  = d.humidity;
-   const g=$('gas');
-   g.textContent = d.gas ? '検知あり' : '検知なし';
-   g.className = 'pill ' + (d.gas ? 'bad' : 'ok');
-   $('conn').textContent = 'ThingSpeakと接続中';
-   $('dot').className = 'dot';
-   $('upd').textContent = fmt(new Date(d.received_at*1000));
-   $('tnote').textContent = 'ThingSpeakから取得';
-  }else{
-   // 更新が止まったら正常とみなさず「通信なし」と表示する
-   $('temp').textContent = '--';
-   $('hum').textContent  = '--';
-   const g=$('gas');
-   g.textContent = '通信なし';
-   g.className = 'pill warn';
-   $('conn').textContent = reach ? 'ThingSpeakのデータ未更新' : 'ThingSpeakに接続できません';
-   $('dot').className = 'dot bad';
-   $('tnote').textContent = 'データ未更新';
-  }
- }
- poll();
- setInterval(poll, 2000);
-})();
-</script>
-</body></html>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
